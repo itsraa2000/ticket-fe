@@ -7,15 +7,20 @@ interface TicketStatusBadgeProps {
 
 export function TicketStatusBadge({ status }: TicketStatusBadgeProps) {
   const variants = {
-    open: "bg-blue-100 text-blue-800 hover:bg-blue-100",
-    "in-progress": "bg-yellow-100 text-yellow-800 hover:bg-yellow-100",
-    resolved: "bg-green-100 text-green-800 hover:bg-green-100",
-    closed: "bg-gray-100 text-gray-800 hover:bg-gray-100",
+    OPEN: "bg-blue-100 text-blue-800 hover:bg-blue-100",
+    IN_PROGRESS: "bg-yellow-100 text-yellow-800 hover:bg-yellow-100",
+    RESOLVED: "bg-green-100 text-green-800 hover:bg-green-100",
+  }
+
+  const displayText = {
+    OPEN: "Open",
+    IN_PROGRESS: "In Progress",
+    RESOLVED: "Resolved",
   }
 
   return (
     <Badge variant="secondary" className={variants[status]}>
-      {status.replace("-", " ")}
+      {displayText[status]}
     </Badge>
   )
 }

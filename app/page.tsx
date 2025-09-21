@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -8,6 +8,17 @@ import { TicketsTable } from "@/components/tickets-table"
 import { TicketsFilters } from "@/components/tickets-filters"
 import { useTickets } from "@/hooks/use-tickets"
 import { Plus, Ticket, AlertCircle, Clock, CheckCircle } from "lucide-react"
+import { API_ENDPOINTS } from "@/lib/config"
+import { 
+  Pagination, 
+  PaginationContent, 
+  PaginationItem, 
+  PaginationLink, 
+  PaginationNext, 
+  PaginationPrevious 
+} from "@/components/ui/pagination"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
 
 export default function TicketsPage() {
   const [filters, setFilters] = useState<{
@@ -15,17 +26,70 @@ export default function TicketsPage() {
     priority?: string
     search?: string
   }>({})
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const [sortBy, setSortBy] = useState("created_at")
+  const [sortOrder, setSortOrder] = useState("DESC")
+  const [overallStats, setOverallStats] = useState({
+    total: 0,
+    open: 0,
+    inProgress: 0,
+    resolved: 0,
+  })
 
-  const { tickets, loading, error, refetch } = useTickets(filters)
+  const { tickets, total, loading, error, refetch, performSearch } = useTickets({
+    ...filters,
+    page: currentPage,
+    pageSize,
+    sortBy,
+    sortOrder,
+  })
+
+  const fetchOverallStats = async () => {
+    try {
+      const response = await fetch(API_ENDPOINTS.TICKETS_STATS)
+      if (response.ok) {
+        const data = await response.json()
+        setOverallStats(data)
+      }
+    } catch (error) {
+      console.error("Error fetching overall stats:", error)
+    }
+  }
+
+  const handleFiltersChange = (newFilters: typeof filters) => {
+    setFilters(newFilters)
+    setCurrentPage(1)
+  }
+
+  const handlePageSizeChange = (value: string) => {
+    setPageSize(parseInt(value))
+    setCurrentPage(1)
+  }
+
+  const handleSort = (column: string) => {
+    if (sortBy === column) {
+      setSortOrder(sortOrder === 'DESC' ? 'ASC' : 'DESC')
+    } else {
+      setSortBy(column)
+      setSortOrder('DESC')
+    }
+    setCurrentPage(1)
+  }
+
+  useEffect(() => {
+    fetchOverallStats()
+  }, [])
 
   const handleDelete = async (id: string) => {
     try {
-      const response = await fetch(`/api/tickets/${id}`, {
+      const response = await fetch(`${API_ENDPOINTS.TICKETS}/${id}`, {
         method: "DELETE",
       })
 
       if (response.ok) {
         refetch()
+        fetchOverallStats()
       } else {
         console.error("Failed to delete ticket")
       }
@@ -35,10 +99,10 @@ export default function TicketsPage() {
   }
 
   const stats = {
-    total: tickets.length,
-    open: tickets.filter((t) => t.status === "open").length,
-    inProgress: tickets.filter((t) => t.status === "in-progress").length,
-    resolved: tickets.filter((t) => t.status === "resolved").length,
+    total: overallStats.total,
+    open: overallStats.open,
+    inProgress: overallStats.inProgress,
+    resolved: overallStats.resolved,
   }
 
   if (loading) {
@@ -72,7 +136,6 @@ export default function TicketsPage() {
 
   return (
     <div className="container mx-auto py-8">
-      {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold text-balance">Ticket System</h1>
@@ -86,7 +149,6 @@ export default function TicketsPage() {
         </Button>
       </div>
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -126,23 +188,79 @@ export default function TicketsPage() {
         </Card>
       </div>
 
-      {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Filters Sidebar */}
         <div className="lg:col-span-1">
-          <TicketsFilters onFiltersChange={setFilters} />
+          <TicketsFilters onFiltersChange={handleFiltersChange} onSearch={performSearch} />
         </div>
 
-        {/* Tickets Table */}
-        <div className="lg:col-span-3">
+        <div className="lg:col-span-3 space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Tickets ({tickets.length})</CardTitle>
+              <CardTitle>Tickets ({total} total, showing {tickets.length})</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              <TicketsTable tickets={tickets} onDelete={handleDelete} />
+              <TicketsTable 
+                tickets={tickets} 
+                onDelete={handleDelete}
+                onSort={handleSort}
+                sortBy={sortBy}
+                sortOrder={sortOrder}
+              />
             </CardContent>
           </Card>
+          
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="page-size" className="text-sm font-medium">
+                  Items per page:
+                </Label>
+                <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
+                  <SelectTrigger className="w-20" id="page-size">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            {total > pageSize && (
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious 
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  />
+                </PaginationItem>
+                
+                {Array.from({ length: Math.ceil(total / pageSize) }, (_, i) => i + 1).map((page) => (
+                  <PaginationItem key={page}>
+                    <PaginationLink
+                      onClick={() => setCurrentPage(page)}
+                      isActive={currentPage === page}
+                      className="cursor-pointer"
+                    >
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+                
+                <PaginationItem>
+                  <PaginationNext 
+                    onClick={() => setCurrentPage(Math.min(Math.ceil(total / pageSize), currentPage + 1))}
+                    className={currentPage === Math.ceil(total / pageSize) ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+            )}
+          </div>
         </div>
       </div>
     </div>

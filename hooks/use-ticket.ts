@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import type { Ticket } from "@/lib/types"
+import { API_ENDPOINTS } from "@/lib/config"
 
 export function useTicket(id: string) {
   const [ticket, setTicket] = useState<Ticket | null>(null)
@@ -11,14 +12,14 @@ export function useTicket(id: string) {
   const fetchTicket = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`/api/tickets/${id}`)
+      const response = await fetch(`${API_ENDPOINTS.TICKETS}/${id}`)
       const data = await response.json()
 
-      if (data.success) {
-        setTicket(data.data)
+      if (response.ok) {
+        setTicket(data)
         setError(null)
       } else {
-        setError(data.error || "Failed to fetch ticket")
+        setError(data.message || "Failed to fetch ticket")
       }
     } catch (err) {
       setError("Failed to fetch ticket")

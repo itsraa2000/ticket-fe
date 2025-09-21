@@ -1,6 +1,7 @@
 "use client";
 
 import type React from "react";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -15,50 +16,43 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, X, Plus } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import type {
   Ticket,
   CreateTicketRequest,
   UpdateTicketRequest,
 } from "@/lib/types";
-import { useToast } from "@/hooks/use-toast";
+import { API_ENDPOINTS } from "@/lib/config";
 
 interface TicketFormProps {
   ticket?: Ticket;
   mode: "create" | "edit";
 }
 
-type Priority = Ticket["priority"]; // "low" | "medium" | "high" | "urgent"
-type Status = Ticket["status"]; // "open" | "in-progress" | "resolved" | "closed"
+type Priority = Ticket["priority"]; // "LOW" | "MEDIUM" | "HIGH"
+type Status = Ticket["status"]; // "OPEN" | "IN_PROGRESS" | "RESOLVED"
 
-type FormData = {
+type FormState = {
   title: string;
   description: string;
   priority: Priority;
-  assignee: string;
-  reporter: string;
   status: Status;
-  tags: string[];
 };
 
 export function TicketForm({ ticket, mode }: TicketFormProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [newTag, setNewTag] = useState("");
-  const { toast } = useToast();
 
-  const [formData, setFormData] = useState<FormData>(() => ({
+  const [formData, setFormData] = useState<FormState>({
     title: ticket?.title ?? "",
     description: ticket?.description ?? "",
-    priority: (ticket?.priority ?? "medium") as Priority,
-    assignee: ticket?.assignee ?? "",
-    reporter: ticket?.reporter ?? "",
-    status: (ticket?.status ?? "open") as Status,
-    tags: ticket?.tags ?? [],
-  }));
+    priority: ticket?.priority ?? "MEDIUM",
+    status: ticket?.status ?? "OPEN",
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,95 +61,73 @@ export function TicketForm({ ticket, mode }: TicketFormProps) {
 
     try {
       const url =
-        mode === "create" ? "/api/tickets" : `/api/tickets/${ticket?.id}`;
-      const method = mode === "create" ? "POST" : "PUT";
+        mode === "create" ? API_ENDPOINTS.TICKETS : `${API_ENDPOINTS.TICKETS}/${ticket?.id}`;
+      const method = mode === "create" ? "POST" : "PATCH";
 
       const payload: CreateTicketRequest | UpdateTicketRequest =
         mode === "create"
           ? {
               title: formData.title,
               description: formData.description,
-              priority: formData.priority,
-              assignee: formData.assignee || undefined,
-              reporter: formData.reporter,
-              tags: formData.tags,
+              priority: formData.priority as "LOW" | "MEDIUM" | "HIGH",
             }
           : {
               title: formData.title,
               description: formData.description,
-              priority: formData.priority,
-              assignee: formData.assignee || undefined,
-              status: formData.status,
-              tags: formData.tags,
+              priority: formData.priority as "LOW" | "MEDIUM" | "HIGH",
+              status: formData.status as "OPEN" | "IN_PROGRESS" | "RESOLVED",
             };
 
       const response = await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(payload),
       });
 
-      const data = await response.json();
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        data = {};
+      }
 
-      if (data.success) {
+      if (response.ok) {
+        // Show success toast
         toast({
-          title: mode === "create" ? "Ticket created" : "Ticket updated",
-          description:
-            mode === "create"
-              ? "Your ticket has been created successfully."
-              : "Your changes have been saved.",
-          className: "text-green-600 border-green-700",
-          duration: 2500,
+          title: "Success!",
+          description: mode === "create" 
+            ? "Ticket created successfully" 
+            : "Ticket updated successfully",
+          variant: "default",
         });
-        router.push("/");
-        router.refresh();
+        
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 1000);
       } else {
-        const msg = data.error || `Failed to ${mode} ticket`;
-        setError(msg);
+        const errorMessage = data.message || `Failed to ${mode} ticket`;
+        setError(errorMessage);
+        
         toast({
+          title: "Error",
+          description: errorMessage,
           variant: "destructive",
-          title: "Something went wrong",
-          description: msg,
-          className: "text-red-600 border-red-700",
-          duration: 5000,
         });
       }
-    } catch (err: unknown) {
-      const msg =
-        err instanceof Error ? err.message : `Failed to ${mode} ticket`;
-      setError(msg);
-      toast({
-        variant: "destructive",
-        title: "Network or server error",
-        description: msg,
-        className: "text-red-600 border-red-700",
-        duration: 5000,
-      });
+    } catch (err) {
+      const errorMessage = `Failed to ${mode} ticket`;
+      setError(errorMessage);
       console.error(`Error ${mode}ing ticket:`, err);
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleAddTag = () => {
-    const t = newTag.trim();
-    if (t && !formData.tags.includes(t)) {
-      setFormData((prev) => ({ ...prev, tags: [...prev.tags, t] }));
-      setNewTag("");
-    }
-  };
-
-  const handleRemoveTag = (tagToRemove: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      tags: prev.tags.filter((tag) => tag !== tagToRemove),
-    }));
-  };
-
-  const handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      handleAddTag();
     }
   };
 
@@ -182,9 +154,13 @@ export function TicketForm({ ticket, mode }: TicketFormProps) {
               onChange={(e) =>
                 setFormData((prev) => ({ ...prev, title: e.target.value }))
               }
-              placeholder="Brief description of the issue"
+              placeholder="Brief description of the issue (minimum 5 characters)"
               required
+              minLength={5}
             />
+            <p className="text-sm text-muted-foreground">
+              Minimum 5 characters required
+            </p>
           </div>
 
           <div className="space-y-2">
@@ -198,10 +174,14 @@ export function TicketForm({ ticket, mode }: TicketFormProps) {
                   description: e.target.value,
                 }))
               }
-              placeholder="Detailed description of the issue..."
-              rows={4}
+              placeholder="Detailed description of the issue (maximum 5000 characters)"
+              rows={6}
               required
+              maxLength={5000}
             />
+            <p className="text-sm text-muted-foreground">
+              {formData.description.length}/5000 characters
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -220,10 +200,9 @@ export function TicketForm({ ticket, mode }: TicketFormProps) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="low">Low</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="urgent">Urgent</SelectItem>
+                  <SelectItem value="LOW">Low</SelectItem>
+                  <SelectItem value="MEDIUM">Medium</SelectItem>
+                  <SelectItem value="HIGH">High</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -244,83 +223,11 @@ export function TicketForm({ ticket, mode }: TicketFormProps) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="open">Open</SelectItem>
-                    <SelectItem value="in-progress">In Progress</SelectItem>
-                    <SelectItem value="resolved">Resolved</SelectItem>
-                    <SelectItem value="closed">Closed</SelectItem>
+                    <SelectItem value="OPEN">Open</SelectItem>
+                    <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                    <SelectItem value="RESOLVED">Resolved</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="reporter">Reporter *</Label>
-              <Input
-                id="reporter"
-                type="email"
-                value={formData.reporter}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, reporter: e.target.value }))
-                }
-                placeholder="reporter@example.com"
-                required
-                disabled={mode === "edit"}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="assignee">Assignee</Label>
-              <Input
-                id="assignee"
-                type="email"
-                value={formData.assignee}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, assignee: e.target.value }))
-                }
-                placeholder="assignee@example.com (optional)"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Tags</Label>
-            <div className="flex gap-2 mb-2">
-              <Input
-                value={newTag}
-                onChange={(e) => setNewTag(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Add a tag..."
-                className="flex-1"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleAddTag}
-                disabled={!newTag.trim()}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-            {formData.tags.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {formData.tags.map((tag) => (
-                  <Badge
-                    key={tag}
-                    variant="secondary"
-                    className="flex items-center gap-1"
-                  >
-                    {tag}
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveTag(tag)}
-                      className="ml-1 hover:text-destructive"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
-                ))}
               </div>
             )}
           </div>

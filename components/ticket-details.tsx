@@ -13,6 +13,7 @@ import { TicketStatusBadge } from "./ticket-status-badge"
 import { TicketPriorityBadge } from "./ticket-priority-badge"
 import type { Ticket } from "@/lib/types"
 import { Edit, Trash2, ArrowLeft, User, Clock, Tag } from "lucide-react"
+import { API_ENDPOINTS } from "@/lib/config"
 
 interface TicketDetailsProps {
   ticket: Ticket
@@ -32,7 +33,7 @@ export function TicketDetails({ ticket }: TicketDetailsProps) {
     setError(null)
 
     try {
-      const response = await fetch(`/api/tickets/${ticket.id}`, {
+      const response = await fetch(`${API_ENDPOINTS.TICKETS}/${ticket.id}`, {
         method: "DELETE",
       })
 
@@ -41,7 +42,7 @@ export function TicketDetails({ ticket }: TicketDetailsProps) {
         router.refresh()
       } else {
         const data = await response.json()
-        setError(data.error || "Failed to delete ticket")
+        setError(data.message || "Failed to delete ticket")
       }
     } catch (err) {
       setError("Failed to delete ticket")
@@ -53,7 +54,6 @@ export function TicketDetails({ ticket }: TicketDetailsProps) {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" asChild>
@@ -88,9 +88,7 @@ export function TicketDetails({ ticket }: TicketDetailsProps) {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Description */}
           <Card>
             <CardHeader>
               <CardTitle>Description</CardTitle>
@@ -101,32 +99,9 @@ export function TicketDetails({ ticket }: TicketDetailsProps) {
               </div>
             </CardContent>
           </Card>
-
-          {/* Tags */}
-          {ticket.tags.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Tag className="h-4 w-4" />
-                  Tags
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {ticket.tags.map((tag) => (
-                    <Badge key={tag} variant="outline">
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </div>
 
-        {/* Sidebar */}
         <div className="space-y-6">
-          {/* Status & Priority */}
           <Card>
             <CardHeader>
               <CardTitle>Status & Priority</CardTitle>
@@ -143,28 +118,6 @@ export function TicketDetails({ ticket }: TicketDetailsProps) {
             </CardContent>
           </Card>
 
-          {/* People */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-4 w-4" />
-                People
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <div className="text-sm font-medium mb-1">Reporter</div>
-                <div className="text-sm text-muted-foreground">{ticket.reporter}</div>
-              </div>
-              <Separator />
-              <div>
-                <div className="text-sm font-medium mb-1">Assignee</div>
-                <div className="text-sm text-muted-foreground">{ticket.assignee || "Unassigned"}</div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Timestamps */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -175,17 +128,17 @@ export function TicketDetails({ ticket }: TicketDetailsProps) {
             <CardContent className="space-y-4">
               <div>
                 <div className="text-sm font-medium mb-1">Created</div>
-                <div className="text-sm text-muted-foreground">{format(new Date(ticket.createdAt), "PPP 'at' p")}</div>
+                <div className="text-sm text-muted-foreground">{format(new Date(ticket.created_at), "PPP 'at' p")}</div>
                 <div className="text-xs text-muted-foreground">
-                  {formatDistanceToNow(new Date(ticket.createdAt), { addSuffix: true })}
+                  {formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true })}
                 </div>
               </div>
               <Separator />
               <div>
                 <div className="text-sm font-medium mb-1">Last Updated</div>
-                <div className="text-sm text-muted-foreground">{format(new Date(ticket.updatedAt), "PPP 'at' p")}</div>
+                <div className="text-sm text-muted-foreground">{format(new Date(ticket.updated_at), "PPP 'at' p")}</div>
                 <div className="text-xs text-muted-foreground">
-                  {formatDistanceToNow(new Date(ticket.updatedAt), { addSuffix: true })}
+                  {formatDistanceToNow(new Date(ticket.updated_at), { addSuffix: true })}
                 </div>
               </div>
             </CardContent>

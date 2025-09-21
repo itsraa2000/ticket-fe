@@ -14,9 +14,10 @@ interface TicketsFiltersProps {
     priority?: string
     search?: string
   }) => void
+  onSearch: () => void
 }
 
-export function TicketsFilters({ onFiltersChange }: TicketsFiltersProps) {
+export function TicketsFilters({ onFiltersChange, onSearch }: TicketsFiltersProps) {
   const [status, setStatus] = useState<string>("all")
   const [priority, setPriority] = useState<string>("all")
   const [search, setSearch] = useState<string>("")
@@ -32,8 +33,20 @@ export function TicketsFilters({ onFiltersChange }: TicketsFiltersProps) {
       search: newFilters.search !== undefined ? newFilters.search : search,
     }
 
-    // Remove empty values
-    const cleanFilters = Object.fromEntries(Object.entries(filters).filter(([_, value]) => value !== ""))
+    // Convert to backend format and remove "all" values
+    const cleanFilters: any = {}
+    
+    if (filters.status && filters.status !== "all") {
+      cleanFilters.status = filters.status
+    }
+    
+    if (filters.priority && filters.priority !== "all") {
+      cleanFilters.priority = filters.priority
+    }
+    
+    if (filters.search && filters.search.trim() !== "") {
+      cleanFilters.search = filters.search.trim()
+    }
 
     onFiltersChange(cleanFilters)
   }
@@ -50,7 +63,14 @@ export function TicketsFilters({ onFiltersChange }: TicketsFiltersProps) {
 
   const handleSearchChange = (value: string) => {
     setSearch(value)
+    // Update the search filter value but don't trigger API call
     handleFiltersChange({ search: value })
+  }
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      onSearch()
+    }
   }
 
   const clearFilters = () => {
@@ -70,16 +90,33 @@ export function TicketsFilters({ onFiltersChange }: TicketsFiltersProps) {
       <CardContent className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="search">Search</Label>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              id="search"
-              placeholder="Search tickets..."
-              value={search}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              className="pl-10"
-            />
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="search"
+                placeholder="Search tickets..."
+                value={search}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
+                className="pl-10"
+              />
+            </div>
+            <Button 
+              type="button" 
+              variant="outline" 
+              size="icon"
+              onClick={onSearch}
+              disabled={!search.trim()}
+            >
+              <Search className="h-4 w-4" />
+            </Button>
           </div>
+          {search && (
+            <p className="text-xs text-muted-foreground">
+              Press Enter or click the search button to search for "{search}"
+            </p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -90,10 +127,9 @@ export function TicketsFilters({ onFiltersChange }: TicketsFiltersProps) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All statuses</SelectItem>
-              <SelectItem value="open">Open</SelectItem>
-              <SelectItem value="in-progress">In Progress</SelectItem>
-              <SelectItem value="resolved">Resolved</SelectItem>
-              <SelectItem value="closed">Closed</SelectItem>
+              <SelectItem value="OPEN">Open</SelectItem>
+              <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+              <SelectItem value="RESOLVED">Resolved</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -106,10 +142,9 @@ export function TicketsFilters({ onFiltersChange }: TicketsFiltersProps) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All priorities</SelectItem>
-              <SelectItem value="low">Low</SelectItem>
-              <SelectItem value="medium">Medium</SelectItem>
-              <SelectItem value="high">High</SelectItem>
-              <SelectItem value="urgent">Urgent</SelectItem>
+              <SelectItem value="LOW">Low</SelectItem>
+              <SelectItem value="MEDIUM">Medium</SelectItem>
+              <SelectItem value="HIGH">High</SelectItem>
             </SelectContent>
           </Select>
         </div>

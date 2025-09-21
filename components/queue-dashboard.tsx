@@ -6,31 +6,53 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { QueueJobBadge } from "./queue-job-badge"
 import { useQueue } from "@/hooks/use-queue"
 import { RefreshCw, Trash2, Activity, Clock, CheckCircle, XCircle, AlertCircle } from "lucide-react"
+import { 
+  Pagination, 
+  PaginationContent, 
+  PaginationItem, 
+  PaginationLink, 
+  PaginationNext, 
+  PaginationPrevious 
+} from "@/components/ui/pagination"
 
 export function QueueDashboard() {
   const [statusFilter, setStatusFilter] = useState<string>("all")
-  const { jobs, loading, error, refetch, clearCompleted } = useQueue({
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+
+  const { jobs, total, loading, error, refetch, clearCompleted } = useQueue({
     status: statusFilter === "all" ? undefined : statusFilter,
     autoRefresh: true,
     refreshInterval: 3000,
+    page: currentPage,
+    pageSize,
   })
 
   const stats = {
-    total: jobs.length,
-    pending: jobs.filter((j) => j.status === "pending").length,
-    processing: jobs.filter((j) => j.status === "processing").length,
+    total: total,
+    pending: jobs.filter((j) => j.status === "waiting").length,
     completed: jobs.filter((j) => j.status === "completed").length,
-    failed: jobs.filter((j) => j.status === "failed").length,
   }
 
   const handleClearCompleted = async () => {
     if (confirm("Are you sure you want to clear all completed jobs?")) {
       await clearCompleted()
     }
+  }
+
+  const handleStatusFilterChange = (value: string) => {
+    setStatusFilter(value)
+    setCurrentPage(1)
+  }
+
+  const handlePageSizeChange = (value: string) => {
+    setPageSize(parseInt(value))
+    setCurrentPage(1)
   }
 
   if (error) {
@@ -63,7 +85,7 @@ export function QueueDashboard() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Jobs</CardTitle>
@@ -84,29 +106,11 @@ export function QueueDashboard() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Processing</CardTitle>
-            <RefreshCw className="h-4 w-4 text-blue-600 animate-spin" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{stats.processing}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Completed</CardTitle>
             <CheckCircle className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">{stats.completed}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Failed</CardTitle>
-            <XCircle className="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{stats.failed}</div>
           </CardContent>
         </Card>
       </div>
@@ -122,16 +126,14 @@ export function QueueDashboard() {
               <label htmlFor="status-filter" className="text-sm font-medium">
                 Status:
               </label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
                 <SelectTrigger className="w-40">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="processing">Processing</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="failed">Failed</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -143,7 +145,7 @@ export function QueueDashboard() {
       {/* Jobs Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Jobs ({jobs.length})</CardTitle>
+          <CardTitle>Jobs ({total} total, showing {jobs.length})</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           {jobs.length === 0 ? (
@@ -168,7 +170,7 @@ export function QueueDashboard() {
                     <TableRow key={job.id}>
                       <TableCell className="font-mono text-sm">#{job.id}</TableCell>
                       <TableCell>
-                        <div className="font-medium">{job.type}</div>
+                        <div className="font-medium">{job.job_type}</div>
                       </TableCell>
                       <TableCell>
                         <QueueJobBadge status={job.status} />
@@ -181,17 +183,17 @@ export function QueueDashboard() {
                         </div>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        <div>{format(new Date(job.createdAt), "MMM d, HH:mm:ss")}</div>
+                        <div>{format(new Date(job.created_at), "MMM d, HH:mm:ss")}</div>
                         <div className="text-xs">
-                          {formatDistanceToNow(new Date(job.createdAt), { addSuffix: true })}
+                          {formatDistanceToNow(new Date(job.created_at), { addSuffix: true })}
                         </div>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {job.processedAt ? (
+                        {job.created_at ? (
                           <div>
-                            <div>{format(new Date(job.processedAt), "MMM d, HH:mm:ss")}</div>
+                            <div>{format(new Date(job.created_at), "MMM d, HH:mm:ss")}</div>
                             <div className="text-xs">
-                              {formatDistanceToNow(new Date(job.processedAt), { addSuffix: true })}
+                              {formatDistanceToNow(new Date(job.created_at), { addSuffix: true })}
                             </div>
                           </div>
                         ) : (
@@ -206,6 +208,57 @@ export function QueueDashboard() {
           )}
         </CardContent>
       </Card>
+
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Label htmlFor="queue-page-size" className="text-sm font-medium">
+            Items per page:
+          </Label>
+          <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
+            <SelectTrigger className="w-20" id="queue-page-size">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+              <SelectItem value="100">100</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        {total > pageSize && (
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious 
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+              />
+            </PaginationItem>
+            
+            {Array.from({ length: Math.ceil(total / pageSize) }, (_, i) => i + 1).map((page) => (
+              <PaginationItem key={page}>
+                <PaginationLink
+                  onClick={() => setCurrentPage(page)}
+                  isActive={currentPage === page}
+                  className="cursor-pointer"
+                >
+                  {page}
+                </PaginationLink>
+              </PaginationItem>
+            ))}
+            
+            <PaginationItem>
+              <PaginationNext 
+                onClick={() => setCurrentPage(Math.min(Math.ceil(total / pageSize), currentPage + 1))}
+                className={currentPage === Math.ceil(total / pageSize) ? "pointer-events-none opacity-50" : "cursor-pointer"}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+        )}
+      </div>
     </div>
   )
 }

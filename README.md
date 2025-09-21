@@ -1,41 +1,104 @@
-<<<<<<< HEAD
-# ticket-fe
-This is Ticket system
-=======
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Ticket System Frontend
 
-## Getting Started
+A modern, responsive Next.js frontend for the Ticket Management System with advanced features including real-time updates, advanced filtering, sorting, and pagination.
 
-First, run the development server:
+## 🚀 Features
+
+- **Modern UI/UX** with Tailwind CSS and Shadcn/ui components
+- **Real-time Updates** for tickets and queue monitoring
+- **Advanced Filtering** by status, priority, and search
+- **Smart Pagination** with customizable page sizes (10, 20, 50, 100)
+- **Sortable Columns** with clickable headers
+- **Responsive Design** that works on all devices
+- **Queue Monitoring** dashboard with job tracking
+- **Form Validation** with comprehensive error handling
+- **Toast Notifications** for user feedback
+- **TypeScript** throughout for type safety
+
+## 🛠️ Technology Stack
+
+- **Framework**: Next.js 15.5.3 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **Components**: Shadcn/ui
+- **State Management**: React Hooks (useState, useEffect)
+- **HTTP Client**: Fetch API
+- **Form Handling**: Custom form components
+- **Icons**: Lucide React
+- **Date Formatting**: date-fns
+
+## ⚙️ Prerequisites
+
+Before running the frontend, ensure you have:
+
+- **Node.js** (v18 or higher)
+- **npm** (v9 or higher)
+- **Backend API** running on `http://localhost:3001` (see backend README)
+
+## 🚀 Setup Instructions
+
+### 1. Clone the Repository
+
+```bash
+git clone <repository-url>
+cd ticket-fe
+```
+
+### 2. Install Dependencies
+
+```=
+npm install
+```
+
+### 3. Environment Configuration
+
+Create a `.env.local` file in the root directory:
+
+```bash
+# API Configuration
+NEXT_PUBLIC_API_URL=http://localhost:3001
+
+# Development Settings
+NODE_ENV=development
+```
+
+### 4. Start the Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The frontend will start on `http://localhost:3000`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🖥️ Available Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+# Start development server
+npm run dev
 
-## Learn More
+# Build for production
+npm run build
 
-To learn more about Next.js, take a look at the following resources:
+# Start production server
+npm start
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Lint code
+npm run lint
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Type checking
+npm run type-check
+```
 
-## Deploy on Vercel
+## 📋 Quick Start Checklist
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- [ ] Node.js 18+ installed
+- [ ] Repository cloned
+- [ ] Dependencies installed (`npm install`)
+- [ ] Backend API running on `http://localhost:3001`
+- [ ] Environment variables configured
+- [ ] Development server started (`npm run dev`)
+- [ ] Application accessible at `http://localhost:3000`
+- [ ] Test ticket creation working
+- [ ] Queue monitoring accessible
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
->>>>>>> origin/dev
+**Frontend is ready!** 🎉

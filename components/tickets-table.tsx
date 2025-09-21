@@ -9,14 +9,17 @@ import { Badge } from "@/components/ui/badge"
 import { TicketStatusBadge } from "./ticket-status-badge"
 import { TicketPriorityBadge } from "./ticket-priority-badge"
 import type { Ticket } from "@/lib/types"
-import { Eye, Edit, Trash2 } from "lucide-react"
+import { Eye, Edit, Trash2, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react"
 
 interface TicketsTableProps {
   tickets: Ticket[]
   onDelete?: (id: string) => void
+  onSort?: (column: string) => void
+  sortBy?: string
+  sortOrder?: string
 }
 
-export function TicketsTable({ tickets, onDelete }: TicketsTableProps) {
+export function TicketsTable({ tickets, onDelete, onSort, sortBy, sortOrder }: TicketsTableProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const handleDelete = async (id: string) => {
@@ -29,6 +32,31 @@ export function TicketsTable({ tickets, onDelete }: TicketsTableProps) {
       setDeletingId(null)
     }
   }
+
+  const getSortIcon = (column: string) => {
+    if (sortBy !== column) {
+      return <ChevronsUpDown className="h-4 w-4 text-muted-foreground" />
+    }
+    return sortOrder === 'DESC' 
+      ? <ChevronDown className="h-4 w-4" />
+      : <ChevronUp className="h-4 w-4" />
+  }
+
+  const SortableHeader = ({ column, children, className }: { 
+    column: string, 
+    children: React.ReactNode, 
+    className?: string 
+  }) => (
+    <TableHead 
+      className={`${className} ${onSort ? 'cursor-pointer hover:bg-muted/50 select-none' : ''}`}
+      onClick={() => onSort?.(column)}
+    >
+      <div className="flex items-center gap-2">
+        {children}
+        {onSort && getSortIcon(column)}
+      </div>
+    </TableHead>
+  )
 
   if (tickets.length === 0) {
     return (
@@ -45,10 +73,9 @@ export function TicketsTable({ tickets, onDelete }: TicketsTableProps) {
           <TableRow>
             <TableHead className="w-20">ID</TableHead>
             <TableHead>Title</TableHead>
-            <TableHead className="w-32">Status</TableHead>
-            <TableHead className="w-32">Priority</TableHead>
-            <TableHead className="w-48">Assignee</TableHead>
-            <TableHead className="w-32">Created</TableHead>
+            <SortableHeader column="status" className="w-32">Status</SortableHeader>
+            <SortableHeader column="priority" className="w-32">Priority</SortableHeader>
+            <SortableHeader column="created_at" className="w-32">Created</SortableHeader>
             <TableHead className="w-32">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -62,20 +89,6 @@ export function TicketsTable({ tickets, onDelete }: TicketsTableProps) {
                     {ticket.title}
                   </Link>
                   <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{ticket.description}</p>
-                  {ticket.tags.length > 0 && (
-                    <div className="flex gap-1 mt-2">
-                      {ticket.tags.slice(0, 3).map((tag) => (
-                        <Badge key={tag} variant="outline" className="text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
-                      {ticket.tags.length > 3 && (
-                        <Badge variant="outline" className="text-xs">
-                          +{ticket.tags.length - 3}
-                        </Badge>
-                      )}
-                    </div>
-                  )}
                 </div>
               </TableCell>
               <TableCell>
@@ -84,18 +97,8 @@ export function TicketsTable({ tickets, onDelete }: TicketsTableProps) {
               <TableCell>
                 <TicketPriorityBadge priority={ticket.priority} />
               </TableCell>
-              <TableCell>
-                {ticket.assignee ? (
-                  <div className="text-sm">
-                    <p className="font-medium">{ticket.assignee.split("@")[0]}</p>
-                    <p className="text-muted-foreground">{ticket.assignee}</p>
-                  </div>
-                ) : (
-                  <span className="text-muted-foreground">Unassigned</span>
-                )}
-              </TableCell>
               <TableCell className="text-sm text-muted-foreground">
-                {formatDistanceToNow(new Date(ticket.createdAt), { addSuffix: true })}
+                {formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true })}
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-2">

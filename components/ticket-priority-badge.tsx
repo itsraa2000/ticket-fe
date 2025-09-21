@@ -7,15 +7,20 @@ interface TicketPriorityBadgeProps {
 
 export function TicketPriorityBadge({ priority }: TicketPriorityBadgeProps) {
   const variants = {
-    low: "bg-gray-100 text-gray-800 hover:bg-gray-100",
-    medium: "bg-blue-100 text-blue-800 hover:bg-blue-100",
-    high: "bg-orange-100 text-orange-800 hover:bg-orange-100",
-    urgent: "bg-red-100 text-red-800 hover:bg-red-100",
+    LOW: "bg-gray-100 text-gray-800 hover:bg-gray-100",
+    MEDIUM: "bg-blue-100 text-blue-800 hover:bg-blue-100",
+    HIGH: "bg-red-100 text-red-800 hover:bg-red-100",
+  }
+
+  const displayText = {
+    LOW: "Low",
+    MEDIUM: "Medium",
+    HIGH: "High",
   }
 
   return (
     <Badge variant="secondary" className={variants[priority]}>
-      {priority}
+      {displayText[priority]}
     </Badge>
   )
 }
