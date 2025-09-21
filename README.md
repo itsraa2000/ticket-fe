@@ -2,31 +2,6 @@
 
 A modern, responsive Next.js frontend for the Ticket Management System with advanced features including real-time updates, advanced filtering, sorting, and pagination.
 
-## 🚀 Features
-
-- **Modern UI/UX** with Tailwind CSS and Shadcn/ui components
-- **Real-time Updates** for tickets and queue monitoring
-- **Advanced Filtering** by status, priority, and search
-- **Smart Pagination** with customizable page sizes (10, 20, 50, 100)
-- **Sortable Columns** with clickable headers
-- **Responsive Design** that works on all devices
-- **Queue Monitoring** dashboard with job tracking
-- **Form Validation** with comprehensive error handling
-- **Toast Notifications** for user feedback
-- **TypeScript** throughout for type safety
-
-## 🛠️ Technology Stack
-
-- **Framework**: Next.js 15.5.3 (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **Components**: Shadcn/ui
-- **State Management**: React Hooks (useState, useEffect)
-- **HTTP Client**: Fetch API
-- **Form Handling**: Custom form components
-- **Icons**: Lucide React
-- **Date Formatting**: date-fns
-
 ## ⚙️ Prerequisites
 
 Before running the frontend, ensure you have:
