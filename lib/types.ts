@@ -26,7 +26,7 @@ export interface QueueJob {
   job_id: string
   job_type: "TicketNotifyJob" | "TicketSlaJob"
   ticket_id: string
-  status: "waiting" | "completed" | "delayed"
+  status: "waiting" | "active" | "completed" | "failed" | "delayed"
   attempts: number
   max_attempts: number
   delay_until?: string

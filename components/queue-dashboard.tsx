@@ -25,7 +25,7 @@ export function QueueDashboard() {
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
 
-  const { jobs, total, loading, error, refetch, clearCompleted } = useQueue({
+  const { jobs, total, stats, loading, error, refetch, clearCompleted } = useQueue({
     status: statusFilter === "all" ? undefined : statusFilter,
     autoRefresh: true,
     refreshInterval: 3000,
@@ -33,10 +33,12 @@ export function QueueDashboard() {
     pageSize,
   })
 
-  const stats = {
+  const displayStats = {
     total: total,
-    pending: jobs.filter((j) => j.status === "waiting").length,
-    completed: jobs.filter((j) => j.status === "completed").length,
+    waiting: stats.waiting,
+    active: stats.active,
+    completed: stats.completed,
+    failed: stats.failed,
   }
 
   const handleClearCompleted = async () => {
@@ -77,7 +79,7 @@ export function QueueDashboard() {
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
             Refresh
           </Button>
-          <Button variant="outline" onClick={handleClearCompleted} disabled={stats.completed === 0}>
+          <Button variant="outline" onClick={handleClearCompleted} disabled={displayStats.completed === 0}>
             <Trash2 className="h-4 w-4 mr-2" />
             Clear Completed
           </Button>
@@ -85,23 +87,32 @@ export function QueueDashboard() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Jobs</CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
+            <div className="text-2xl font-bold">{displayStats.total}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending</CardTitle>
+            <CardTitle className="text-sm font-medium">Waiting</CardTitle>
             <Clock className="h-4 w-4 text-gray-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-600">{stats.pending}</div>
+            <div className="text-2xl font-bold text-gray-600">{displayStats.waiting}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active</CardTitle>
+            <Activity className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">{displayStats.active}</div>
           </CardContent>
         </Card>
         <Card>
@@ -110,7 +121,16 @@ export function QueueDashboard() {
             <CheckCircle className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.completed}</div>
+            <div className="text-2xl font-bold text-green-600">{displayStats.completed}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Failed</CardTitle>
+            <XCircle className="h-4 w-4 text-red-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">{displayStats.failed}</div>
           </CardContent>
         </Card>
       </div>
@@ -132,8 +152,11 @@ export function QueueDashboard() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="waiting">Waiting</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="failed">Failed</SelectItem>
+                  <SelectItem value="delayed">Delayed</SelectItem>
                 </SelectContent>
               </Select>
             </div>
